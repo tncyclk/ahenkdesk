@@ -1,4 +1,4 @@
-# vue-ahenk-app
+# ahenkdesk
 
 ## Project setup
 ```
