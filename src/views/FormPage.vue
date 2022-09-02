@@ -20,6 +20,7 @@
 <script>
 import Dropdown from 'primevue/dropdown';
 import Textarea from 'primevue/textarea';
+const {ipcRenderer} = require("electron")
     export default {
         data(){
             return{
@@ -27,7 +28,6 @@ import Textarea from 'primevue/textarea';
                 selectedUnit:null,
                 subject:null,
                 error:null,
-                valueArray:[],
                 messageSent:false,
                 units:[
                     "LiderAhenk",
@@ -36,6 +36,7 @@ import Textarea from 'primevue/textarea';
                     "Altyapı",
                 ],
                 requireMessage:false,
+                valueArray:null,
             }
         },
         components:{
@@ -50,18 +51,17 @@ import Textarea from 'primevue/textarea';
                         this.requireMessage=false
                     }, 2000)
                 }else{
-                    this.valueArray.push({
+                    this.valueArray={
                         name:this.name,
                         unit:this.selectedUnit,
                         subject:this.subject,
-                        error:this.error,
-                    })
+                        error:this.error
+                    }
                     this.messageSent=true
-                    this.$store.commit("updateMessageArray",this.valueArray)
+                    ipcRenderer.send("dbus:send",JSON.stringify(this.valueArray))   
                     setTimeout(()=>{
-                        this.messageSent=false
                         this.$router.push({name:"home"})
-                    }, 2000)    
+                    },2000)
                 }
                             
             }
