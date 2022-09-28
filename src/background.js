@@ -3,7 +3,15 @@
 import { app, protocol, BrowserWindow, ipcMain,Tray,Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-const path = require('path');
+let path = require('path');
+let dbus = require("dbus-next")
+let probject , bus, ahenk, message
+async function getObject(){
+  bus= dbus.sessionBus();
+  probject = await bus.getProxyObject("org.ahenkdesk.dbus.Daemon","/org/ahenkdesk/dbus/Daemon");
+  ahenk = probject.getInterface("org.ahenkdesk.dbus.Daemon")
+}
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -17,7 +25,7 @@ async function createWindow() {
    mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    frame:false,
+    // frame:false,
     webPreferences: {
       
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -69,7 +77,23 @@ app.on('ready', async () => {
   }
   createWindow()
 })
+function delay(waitTime){
+  return new Promise((resolve) => setTimeout(function(){resolve();}, waitTime))
+}
+
+async function getMessage(){
+  while(true){
+    if(ahenk !== undefined){
+      message = await ahenk.messageIncome();
+    }
+    console.log(message)
+    await delay(3000)
+  }
+}
+
 app.whenReady().then(()=>{
+  getObject(); // dbus objesi tanımlanıyor
+  getMessage(); //  ahenk tarafından gelen mesajlar kontrol ediliyor
   tray = new Tray('./src/assets/tray.png')
   const contextMenu = Menu.buildFromTemplate([
    {
@@ -114,5 +138,8 @@ ipcMain.on("topright:max",()=>{
     mainWindow.setFullScreen(true);  
     mainWindow.webContents.toggleDevTools();
   }
-  
-})
+  })
+  ipcMain.on("dbus:send",(e,array)=>{
+    console.log(ahenk.messageSend(array));
+  })
+
